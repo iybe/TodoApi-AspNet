@@ -8,7 +8,7 @@ using System.Linq;
 using TodoApi.Services;
 using System.Net.Http;
 
-namespace Shop.Controllers
+namespace TodoApi.Controllers
 {
     [Route("api")]
     public class HomeController : ControllerBase

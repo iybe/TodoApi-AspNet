@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGeneration.Contracts.Messaging;
 using TodoApi.Models;
+using System.Security.Claims;
 
 namespace TodoApi.Controllers
 {
@@ -29,38 +27,38 @@ namespace TodoApi.Controllers
         [Authorize]
         public async Task<ActionResult<dynamic>> GetTodoItems()
         {
-            var userId = User.Claims
-                .Where(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)
-                .Select(c => c.Value)
-                .First().ToString();
-            int id = System.Convert.ToInt32(userId);
+            int userId = IdUserAuthenticate();
 
-            var todosUser =  _context.TodoItems.Where(todo => todo.User_Id == id);
-            
-            if (todosUser.Any())
-            {
-                return await todosUser.ToListAsync();
-            }
-            return NotFound(new { Message = "Dados do usuario incorretos" });
+            var todosUser =  await _context.TodoItems
+                .Where(todo => todo.User_Id == userId)
+                .ToListAsync();
 
+            return todosUser;
         }
 
         // GET: api/TodoItems/5
-        /*[HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> GetTodoItem(int id)
+        [HttpGet("{id}")]
+        [Authorize]
+        public ActionResult<TodoItem> GetTodoItem(int id)
         {
-            var todoItem = await _context.TodoItems.FindAsync(id);
+            int userId = IdUserAuthenticate();
 
-            if (todoItem == null)
+            try
             {
-                return NotFound();
+                var todoItem = _context.TodoItems
+                    .Where(t => t.Id == id && t.User_Id == userId)
+                    .First();
+                return todoItem;
             }
-
-            return todoItem;
-        }*/
+            catch
+            {
+                return NotFound(new { message = "Todo não encontrado"});
+            }
+        }
 
         // PUT: api/TodoItems/5
-        /*[HttpPut("{id}")]
+        [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> PutTodoItem(int id, TodoItem todoItem)
         {
             if (id != todoItem.Id)
@@ -68,44 +66,50 @@ namespace TodoApi.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(todoItem).State = EntityState.Modified;
+            int userId = IdUserAuthenticate();
+            TodoItem todo;
 
             try
             {
-                await _context.SaveChangesAsync();
+                todo = _context.TodoItems
+                    .Where(t => t.Id == id && t.User_Id == userId)
+                    .First();
             }
-            catch (DbUpdateConcurrencyException)
+            catch
             {
-                if (!TodoItemExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound(new { message = "Todo não encontrado" });
             }
 
+            _context.Entry(todoItem).State = EntityState.Modified;
+
+            await _context.SaveChangesAsync();
+
             return NoContent();
-        }*/
+        }
 
         // POST: api/TodoItems
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<TodoItem>> PostTodoItem([FromBody] TodoItem todoItem)
         {
+            todoItem.User_Id = IdUserAuthenticate();
             var newTodo = _context.TodoItems.Add(todoItem);
             await _context.SaveChangesAsync();
 
             return newTodo.Entity;
-            //return CreatedAtAction(nameof(GetTodoItem), new { id = todoItem.Id }, todoItem);
         }
 
         // DELETE: api/TodoItems/5
-        /*[HttpDelete("{id}")]
+        [HttpDelete("{id}")]
+        [Authorize]
         public async Task<ActionResult<TodoItem>> DeleteTodoItem(int id)
         {
-            var todoItem = await _context.TodoItems.FindAsync(id);
+            int userId = IdUserAuthenticate();
+
+            var todoItem = _context.TodoItems
+                .Where(t => t.User_Id == userId && t.Id == id)
+                .First();
+
             if (todoItem == null)
             {
                 return NotFound();
@@ -117,9 +121,15 @@ namespace TodoApi.Controllers
             return todoItem;
         }
 
-        private bool TodoItemExists(int id)
+        //metodo de servico, retorna o id do usuario autenticado
+        private int IdUserAuthenticate()
         {
-            return _context.TodoItems.Any(e => e.Id == id);
-        }*/
+            var userId = User.Claims
+                .Where(c => c.Type == ClaimTypes.NameIdentifier)
+                .Select(c => c.Value)
+                .First().ToString();
+            
+            return System.Convert.ToInt32(userId);
+        }
     }
 }
