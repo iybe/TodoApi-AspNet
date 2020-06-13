@@ -80,7 +80,8 @@ namespace TodoApi.Controllers
                 return NotFound(new { message = "Todo não encontrado" });
             }
 
-            _context.Entry(todoItem).State = EntityState.Modified;
+            todo.Name = todoItem.Name;
+            todo.IsComplete = todoItem.IsComplete;
 
             await _context.SaveChangesAsync();
 
