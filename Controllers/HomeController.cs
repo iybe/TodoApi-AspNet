@@ -49,7 +49,22 @@ namespace Shop.Controllers
         [HttpGet]
         [Route("authenticated")]
         [Authorize]
-        public string Authenticated() => String.Format("Autenticado - {0}", User.Identity.Name);
+        public string Authenticated() 
+        {
+            string resp = "";
+            //foreach(var v in User.Identities)
+            //{
+            //    resp += v.Claims + " = " + v.Name + "\n";
+            //}
+            resp = User
+                .Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)
+                .Select(c => c.Value)
+                .First()
+                .ToString();
+
+            //return String.Format("Autenticado - {0}", User.Claims);
+            return resp;
+        }
 
     }
 }

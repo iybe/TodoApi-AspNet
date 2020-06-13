@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -26,10 +27,15 @@ namespace TodoApi.Controllers
          */
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<dynamic>> GetTodoItems([FromBody] User user)
+        public async Task<ActionResult<dynamic>> GetTodoItems()
         {
-            var todosUser =  _context.TodoItems
-                    .Where(todo => todo.User_Id == user.Id);
+            var userId = User.Claims
+                .Where(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)
+                .Select(c => c.Value)
+                .First().ToString();
+            int id = System.Convert.ToInt32(userId);
+
+            var todosUser =  _context.TodoItems.Where(todo => todo.User_Id == id);
             
             if (todosUser.Any())
             {
