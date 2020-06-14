@@ -5,13 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="NovaPasta\**" />
-    <Content Remove="NovaPasta\**" />
-    <EmbeddedResource Remove="NovaPasta\**" />
-    <None Remove="NovaPasta\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="b34ana2z.lpk~" />
   </ItemGroup>
 

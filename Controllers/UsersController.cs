@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Models;
+using TodoApi.DTOs;
 
 namespace TodoApi.Controllers
 {
@@ -25,7 +26,7 @@ namespace TodoApi.Controllers
         // GET: api/Users
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<User>> GetUser()
+        public async Task<ActionResult<UserDTO>> GetUser()
         {
             int id = IdUserAuthenticate();
             var user = await _context.Users.FindAsync(id);
@@ -35,29 +36,48 @@ namespace TodoApi.Controllers
                 return NotFound();
             }
 
-            return user;
+            var dto = new UserDTO
+            {
+                Username = user.Username,
+                Password = user.Password
+            };
+
+            return dto;
         }
 
         // PUT: api/Users
-        //[HttpPut]
-        //[Authorize]
-        //public async Task<IActionResult> PutUser(User user)
-        //{
-        //    _context.Entry(user).State = EntityState.Modified;
-        //    await _context.SaveChangesAsync();
-            
-        //    return NoContent();
-        //}
+        [HttpPut]
+        [Authorize]
+        public async Task<IActionResult> PutUser(UserDTO user)
+        {
+            int id = IdUserAuthenticate();
+            User userAtual = _context.Users
+                .Where(u => u.Id == id)
+                .First();
+
+            userAtual.Username = user.Username;
+            userAtual.Password = user.Password;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
 
         // POST: api/Users
         [HttpPost]
         [AllowAnonymous]
-        public async Task<ActionResult<User>> PostUser([FromBody] User user)
+        public async Task<ActionResult<UserDTO>> PostUser([FromBody] UserDTO user)
         {
-            _context.Users.Add(user);
+            var newUser = new User
+            {
+                Username = user.Username,
+                Password = user.Password
+            };
+
+            _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return CreatedAtAction("GetUser",  user);
         }
 
         // DELETE: api/Users
