@@ -81,26 +81,35 @@ namespace TodoApi.Controllers
         }
 
         // DELETE: api/Users
-        //[HttpDelete]
-        //[Authorize]
-        //public async Task<ActionResult<User>> DeleteUser()
-        //{
-        //    int userId = IdUserAuthenticate();
+        [HttpDelete]
+        [Authorize]
+        public async Task<ActionResult<User>> DeleteUser()
+        {
+            int userId = IdUserAuthenticate();
 
-        //    User user = _context.Users
-        //        .Where(t =>t.Id == userId)
-        //        .First();
+            User user = _context.Users
+                .Where(t => t.Id == userId)
+                .First();
 
-        //    if (user == null)
-        //    {
-        //        return NotFound();
-        //    }
+            if (user == null)
+            {
+                return NotFound();
+            }
 
-        //    _context.Users.Remove(user);
-        //    await _context.SaveChangesAsync();
+            List<TodoItem> todos = _context.TodoItems
+                .Where(t => t.User_Id == userId)
+                .ToList();
 
-        //    return user;
-        //}
+            foreach(var todo in todos)
+            {
+                _context.TodoItems.Remove(todo);
+            }
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return user;
+        }
 
         private bool UserExists(int id)
         {
